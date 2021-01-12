@@ -4,6 +4,7 @@ const cors = require('cors')
 require('dotenv').config()
 let mongoose = require('mongoose');
 let bodyParser = require('body-parser');
+const { response } = require('express');
 
 mongoose.connect(process.env.MONGO_URI, {
   useCreateIndex: true,
@@ -65,7 +66,6 @@ app.post('/api/exercise/add',bodyParser.urlencoded({extended: false}), (req,res)
 
 
     responseObject["username"] = data.username;
-    console.log(req.body.date);
     let dateString = "";
     if(req.body.date === ""){
       dateString = new Date().toString();
@@ -74,15 +74,31 @@ app.post('/api/exercise/add',bodyParser.urlencoded({extended: false}), (req,res)
     }
     dateString = dateString.split(' ').slice(0,4).join(' ');
     responseObject["date"] = dateString;
-    responseObject["duration"] = req.body.duration;
+    responseObject["duration"] = parseInt(req.body.duration);
     responseObject["description"] = req.body.description;
 
 
 
-    data.log.push({description: req.body.description, duration: req.body.duration, date: responseObject.date.toString()});
+    data.log.push({description: req.body.description, duration: parseInt(req.body.duration), date: responseObject.date.toString()});
+    data.save();
     res.json(responseObject);
   }) 
+})
 
+
+app.get('/api/exercise/log', (req,res) => {
+  User.findById(req.query.userId, (err,data) => {
+    if(err)return console.error(err);
+    let responseObject = {};
+    console.log(data);
+    responseObject['_id'] = data.id;
+    responseObject['username'] = data.username;
+    responseObject['count'] = data.log.length;
+    responseObject['log'] = data.log.map(a => ({ description: a.description, duration: a.duration, date: a.date}));
+    responseObject['count'] = data.log.length;
+
+    res.json(responseObject)
+  })
 })
 
 
